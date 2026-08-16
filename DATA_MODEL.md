@@ -1,7 +1,7 @@
 # Data Model — Research Permit Licensing Web Application
 
 > Technical contract for the database schema. Update this file in the same change set as any migration.
-> Stack assumption: PostgreSQL (see `PROJECT_PLAN.md` §10). Field names are illustrative snake_case; adapt to project ORM conventions but keep this file in sync.
+> Stack Confirmed: TypeScript monorepo, Next.js, NestJS, PostgreSQL, Redis/BullMQ, Docker Compose. (see `PROJECT_PLAN.md` §10). Field names are illustrative snake_case; adapt to project ORM conventions but keep this file in sync.
 
 ---
 

@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: rpl_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-rpl_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-rpl_password}
+      POSTGRES_DB: ${DB_NAME:-rpl_db}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: rpl_redis
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: rpl_mailhog
+    ports:
+      - '${SMTP_PORT:-1025}:1025' # SMTP server
+      - '8025:8025' # Web UI
+    restart: unless-stopped
+
+  backend:
+    image: node:22-alpine
+    container_name: rpl_backend
+    working_dir: /usr/src/app
+    ports:
+      - '${BACKEND_PORT:-3001}:3001'
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-rpl_user}:${DB_PASSWORD:-rpl_password}@db:5432/${DB_NAME:-rpl_db}?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      - db
+      - redis
+      - mailhog
+    volumes:
+      - ./:/usr/src/app
+    command: sh -c "npm install && npm run start:dev -w backend"
+    # Note: Dockerfile will be created when preparing for deployment. We use volume mounting for dev.
+    profiles:
+      - full
+
+  frontend:
+    image: node:22-alpine
+    container_name: rpl_frontend
+    working_dir: /app
+    ports:
+      - '${FRONTEND_PORT:-3000}:3000'
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT:-3001}/api/v1
+    depends_on:
+      - backend
+    volumes:
+      - ./:/app
+    command: sh -c "npm install && npm run dev -w frontend"
+    # Note: Dockerfile will be created when preparing for deployment. We use volume mounting for dev.
+    profiles:
+      - full
+
+volumes:
+  pgdata:
+  redisdata:

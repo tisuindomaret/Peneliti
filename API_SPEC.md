@@ -1,6 +1,7 @@
 # API Specification — Research Permit Licensing Web Application
 
 > Technical contract for the backend REST API. Update this file in the same change set as any endpoint addition/change.
+> Stack Confirmed: TypeScript monorepo, Next.js, NestJS, PostgreSQL, Redis/BullMQ, Docker Compose. (see `PROJECT_PLAN.md` §10).
 > Auth: Bearer JWT or session cookie (confirm choice in Phase 0/1). All endpoints except explicitly marked `Public` require authentication. All non-`Public` endpoints must additionally enforce role/ownership checks per `PROJECT_PLAN.md` §12.
 
 Conventions:
