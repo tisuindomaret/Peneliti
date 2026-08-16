@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ Peneliti, main ]
   pull_request:
-    branches: [ main ]
+    branches: [ Peneliti, main ]
 
 jobs:
   build_and_test:
