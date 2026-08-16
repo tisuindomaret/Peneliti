@@ -1,0 +1,17 @@
+# Generated local analysis artifacts
+graphify-out/
+
+# Local environment and dependencies
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+.next/
+coverage/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
