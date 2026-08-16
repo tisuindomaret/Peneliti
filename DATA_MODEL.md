@@ -27,12 +27,14 @@
 | email_verified_at | timestamp | null until verified |
 | status | enum(active, deactivated) | soft-delete via this + deactivated_at |
 | deactivated_at | timestamp | nullable |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 2. `roles` and `permissions` (RBAC)
-- `roles`: id, name (applicant, verifier, official, admin, output_reviewer)
-- `permissions`: id, code (e.g., `application.approve`, `permit.issue`)
-- `role_permissions`: role_id, permission_id
-- `user_roles`: user_id, role_id (supports multiple roles per user if needed)
+- `roles`: id (UUID PK), name (applicant, verifier, official, admin, output_reviewer), created_at, updated_at
+- `permissions`: id (UUID PK), code (e.g., `application.approve`, `permit.issue`), created_at, updated_at
+- `role_permissions`: id (UUID PK), role_id (FK → roles), permission_id (FK → permissions), created_at, updated_at
+- `user_roles`: id (UUID PK), user_id (FK → users), role_id (FK → roles), created_at, updated_at
 
 ## 3. `institutions`
 | Column | Type | Notes |
@@ -44,16 +46,20 @@
 | responsible_officer | text | |
 | legal_document_file_id | FK → files | nullable |
 | owner_user_id | FK → users | primary account managing this institution |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 4. `applicant_profiles`
 | Column | Type | Notes |
 |---|---|---|
 | id | UUID PK | |
-| user_id | FK → users | |
+| user_id | FK → users UNIQUE | 1:1 relationship |
 | identity_number | text | nullable, per policy |
 | address | text | |
 | affiliation | text | |
 | institution_id | FK → institutions | nullable |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 5. `permit_types`
 | Column | Type | Notes |
@@ -65,6 +71,8 @@
 | validity_period_days | integer | configurable per type |
 | numbering_pattern | text | e.g. `{PREFIX}/{TYPE}/{YYYY}/{SEQ}` |
 | pdf_template_id | FK → document_templates | |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 6. `permit_requirements`
 | Column | Type | Notes |
@@ -75,6 +83,8 @@
 | is_mandatory | boolean | |
 | accepted_formats | text[] | e.g. {pdf,docx} |
 | max_size_mb | integer | |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 7. `applications` (Permohonan)
 | Column | Type | Notes |
@@ -98,6 +108,8 @@
 | assigned_official_id | FK → users | nullable |
 | submitted_at | timestamp | nullable while draft |
 | decided_at | timestamp | nullable |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 **Status enum:** `draft, submitted, needs_revision, admin_verification, substantive_verification, awaiting_approval, approved, rejected, expired, completed`
 
@@ -110,6 +122,8 @@
 | file_id | FK → files | |
 | version | integer | increments on resubmission |
 | review_status | enum(pending, accepted, needs_revision, rejected) | |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 9. `files`
 | Column | Type | Notes |
@@ -121,6 +135,8 @@
 | size_bytes | bigint | |
 | uploaded_by | FK → users | |
 | checksum | text | optional integrity check |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 10. `reviews`
 | Column | Type | Notes |
@@ -132,6 +148,7 @@
 | decision | enum(approve, reject, request_revision) | nullable if just a note |
 | notes | text | |
 | created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 11. `permits` (Izin)
 | Column | Type | Notes |
@@ -146,6 +163,8 @@
 | verification_token | text UNIQUE | used in QR/verification URL |
 | status | enum(active, expired, cancelled, superseded) | |
 | superseded_by_permit_id | FK → permits | nullable, self-reference for revisions |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 12. `research_outputs`
 | Column | Type | Notes |
@@ -163,6 +182,8 @@
 | status | enum(not_uploaded, uploaded, under_review, needs_revision, accepted, rejected) | |
 | reviewed_by | FK → users | nullable |
 | reviewed_at | timestamp | nullable |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 13. `notifications`
 | Column | Type | Notes |
@@ -175,6 +196,8 @@
 | delivery_status | enum(pending, sent, failed) | |
 | sent_at | timestamp | nullable |
 | retry_count | integer | default 0 |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 ## 14. `audit_logs`
 | Column | Type | Notes |
@@ -189,7 +212,7 @@
 | ip_address | text | nullable |
 | created_at | timestamp | |
 
-**Rule:** `audit_logs` has no UPDATE/DELETE endpoint anywhere in the API. Insert-only.
+**Rule:** `audit_logs` has no UPDATE/DELETE endpoint anywhere in the API. Insert-only. (No `updated_at` needed)
 
 ## 15. `status_history` (shared, generic)
 Used by both `applications` and `research_outputs` for granular transition history (separate from the broader `audit_logs`, which covers all entities):
@@ -205,14 +228,17 @@ Used by both `applications` and `research_outputs` for granular transition histo
 | note | text | nullable |
 | created_at | timestamp | |
 
+**Rule:** `status_history` is insert-only. (No `updated_at` needed)
+
 ---
 
 ## Indexing Notes
 
-- Unique indexes: `applications.application_number`, `permits.permit_number`, `permits.verification_token`, `users.email`.
+- Unique indexes: `applications.application_number`, `permits.permit_number`, `permits.verification_token`, `users.email`, `applicant_profiles.user_id`.
 - Composite index on `applications(status, permit_type_id, submitted_at)` for verifier queue filtering.
 - Index `research_outputs(permit_id, status)` for compliance dashboards.
 - Index `audit_logs(object_type, object_id, created_at)` for per-record history views.
+- Index `status_history(entity_type, entity_id, created_at)` for querying status history timeline.
 
 ## Relationships Summary
 

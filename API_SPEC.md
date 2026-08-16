@@ -57,7 +57,7 @@ Conventions:
 | GET | `/applications/{id}` | Owner / Verifier / Official / Admin | Get full detail |
 | POST | `/applications/{id}/reviews` | Verifier | Add review note / mark completeness |
 | POST | `/applications/{id}/request-revision` | Verifier | Transition to `needs_revision` with action list |
-| POST | `/applications/{id}/forward` | Verifier | Transition to `awaiting_approval` |
+| POST | `/applications/{id}/forward` | Verifier | Transition to `admin_verification` or `substantive_verification` or `awaiting_approval` depending on current phase |
 | POST | `/applications/{id}/approve` | Official | Approve; triggers permit issuance workflow |
 | POST | `/applications/{id}/reject` | Official | Reject; requires `reason` |
 | GET | `/applications/{id}/history` | Owner / Verifier / Official / Admin | Status history timeline |
