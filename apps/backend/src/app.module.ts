@@ -8,6 +8,9 @@ import { RolesModule } from './roles/roles.module';
 import { MailerModule } from './mailer/mailer.module';
 import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
+import { ProfilesModule } from './profiles/profiles.module';
+import { InstitutionsModule } from './institutions/institutions.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { AuditModule } from './audit/audit.module';
     RolesModule,
     MailerModule,
     AuditModule,
+    ProfilesModule,
+    InstitutionsModule,
+    FilesModule,
   ],
   providers: [
     {

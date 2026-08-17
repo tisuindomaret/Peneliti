@@ -42,3 +42,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added utility `logout` function to `api.ts` frontend helper.
 - Expanded backend testing to include missing specs: duplicate-email rejection, email-verification gating upon login, and authenticated change-password endpoint check.
 - Added missing `/auth/logout` API route to match `API_SPEC.md`, audit-log persistence for critical account actions, and default permission seed placeholders for data-driven RBAC.
+
+## [Unreleased]
+
+### Added
+
+- Implemented Phase 2.2 — Applicant Profile (FR-02) backend services (`profiles`, `institutions`, `files`) including schema, security validation, and role-based guards.
+- Implemented frontend UI for Applicant Profile (`/profile`) dynamically supporting institutional applicants and file uploads.
+
+## [Unreleased]
+### Added
+- Implemented Phase 2.2 — Applicant Profile (FR-02) backend services (`profiles`, `institutions`, `files`) including schema, security validation, and role-based guards.
+- Implemented frontend UI for Applicant Profile (`/profile`) dynamically supporting institutional applicants and file uploads.

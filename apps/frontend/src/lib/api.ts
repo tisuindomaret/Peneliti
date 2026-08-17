@@ -52,3 +52,27 @@ export const authApi = {
     }
   },
 };
+
+export const profileApi = {
+  getProfile: () => fetchWithAuth('/profile', { method: 'GET' }),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateProfile: (data: Record<string, any>) =>
+    fetchWithAuth('/profile', { method: 'PUT', body: JSON.stringify(data) }),
+};
+
+export const institutionsApi = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createInstitution: (data: Record<string, any>) =>
+    fetchWithAuth('/institutions', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+export const filesApi = {
+  uploadFile: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetchWithAuth('/files/upload', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+};

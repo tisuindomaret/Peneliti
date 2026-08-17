@@ -8,8 +8,10 @@ export interface AuditLogInput {
   action: string;
   objectType: string;
   objectId?: string | null;
-  beforeState?: Record<string, unknown> | null;
-  afterState?: Record<string, unknown> | null;
+
+  beforeState?: Record<string, any>;
+
+  afterState?: Record<string, any>;
   ipAddress?: string | null;
 }
 
@@ -29,7 +31,9 @@ export class AuditService {
         action: input.action,
         objectType: input.objectType,
         objectId: input.objectId ?? null,
+
         beforeState: input.beforeState ?? null,
+
         afterState: input.afterState ?? null,
         ipAddress: input.ipAddress ?? null,
       });
