@@ -40,6 +40,7 @@ Conventions:
 | Method | Path                                           | Role                 | Description                                           |
 | ------ | ---------------------------------------------- | -------------------- | ----------------------------------------------------- |
 | GET    | `/permit-types`                                | Public/Authenticated | List active permit types (public sees limited fields) |
+| GET    | `/permit-types/{id}`                           | Authenticated        | Get permit type detail                                |
 | POST   | `/permit-types`                                | Admin                | Create permit type                                    |
 | PUT    | `/permit-types/{id}`                           | Admin                | Update permit type                                    |
 | PATCH  | `/permit-types/{id}/activate` \| `/deactivate` | Admin                | Toggle availability                                   |

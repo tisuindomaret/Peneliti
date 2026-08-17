@@ -95,6 +95,16 @@
 | created_at       | timestamp         |                          |
 | updated_at       | timestamp         |                          |
 
+## 6.5 `document_templates`
+
+| Column           | Type              | Notes                    |
+| ---------------- | ----------------- | ------------------------ |
+| id               | UUID PK           |                          |
+| name             | text              |                          |
+| file_id          | FK → files        | nullable                 |
+| created_at       | timestamp         |                          |
+| updated_at       | timestamp         |                          |
+
 ## 7. `applications` (Permohonan)
 
 | Column                 | Type                         | Notes                                         |

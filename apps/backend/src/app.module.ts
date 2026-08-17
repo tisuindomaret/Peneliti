@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { InstitutionsModule } from './institutions/institutions.module';
+import { PermitTypesModule } from './permit-types/permit-types.module';
 import { FilesModule } from './files/files.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { FilesModule } from './files/files.module';
     RolesModule,
     MailerModule,
     AuditModule,
+    PermitTypesModule,
     ProfilesModule,
     InstitutionsModule,
     FilesModule,

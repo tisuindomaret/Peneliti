@@ -46,11 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-
 - Implemented Phase 2.2 — Applicant Profile (FR-02) backend services (`profiles`, `institutions`, `files`) including schema, security validation, and role-based guards.
 - Implemented frontend UI for Applicant Profile (`/profile`) dynamically supporting institutional applicants and file uploads.
-
-## [Unreleased]
-### Added
-- Implemented Phase 2.2 — Applicant Profile (FR-02) backend services (`profiles`, `institutions`, `files`) including schema, security validation, and role-based guards.
-- Implemented frontend UI for Applicant Profile (`/profile`) dynamically supporting institutional applicants and file uploads.
+- **Phase 2.3 — Permit Type & Requirement Configuration (FR-03):**
+  - Implemented `PermitType`, `PermitRequirement`, and `DocumentTemplate` (placeholder) entities.
+  - Implemented API endpoints for admin CRUD on permit types and requirements, with activate/deactivate toggles.
+  - Configured server-side validation and audit logging for all mutations.
+  - Seeded a "Demo Research Permit" and "Demo Template" with placeholder sample data for development.
+  - Implemented frontend Admin UI (`/admin/permit-types` and sub-routes) for listing, creating, editing permit types, and managing their requirements.
+  - Configurable placeholders introduced: `validity_period_days`, `numbering_pattern` (e.g. `{PREFIX}/{TYPE}/{YYYY}/{SEQ}`), and `pdf_template_id`.
