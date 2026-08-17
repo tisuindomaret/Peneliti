@@ -22,6 +22,20 @@ import {
 import { PermitRequirement } from '../permit-types/entities/permit-requirement.entity';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { User } from '../users/entities/user.entity';
+import { extname } from 'path';
+
+const MIME_TYPES_BY_EXTENSION: Record<string, string[]> = {
+  pdf: ['application/pdf'],
+  doc: ['application/msword'],
+  docx: [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ],
+  xls: ['application/vnd.ms-excel'],
+  xlsx: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+  jpg: ['image/jpeg'],
+  jpeg: ['image/jpeg'],
+  png: ['image/png'],
+};
 
 @Injectable()
 export class ApplicationsService {
@@ -92,7 +106,7 @@ export class ApplicationsService {
   ): Promise<Application> {
     if (!user.emailVerifiedAt) {
       throw new ForbiddenException(
-        'Email verification required to submit an application',
+        'Email verification required to create an application draft',
       );
     }
 
@@ -195,6 +209,11 @@ export class ApplicationsService {
     });
     if (!requirement)
       throw new NotFoundException('Permit requirement not found');
+    if (requirement.permit_type_id !== app.permitTypeId) {
+      throw new BadRequestException(
+        'Document requirement does not belong to this application permit type',
+      );
+    }
 
     if (file.size > requirement.max_size_mb * 1024 * 1024) {
       throw new BadRequestException(
@@ -202,10 +221,18 @@ export class ApplicationsService {
       );
     }
 
-    const fileExt = file.originalname.split('.').pop()?.toLowerCase();
+    const fileExt = extname(file.originalname).slice(1).toLowerCase();
     if (!fileExt || !requirement.accepted_formats.includes(fileExt)) {
       throw new BadRequestException(
         `Invalid file format. Accepted formats: ${requirement.accepted_formats.join(', ')}`,
+      );
+    }
+    if (
+      file.mimetype &&
+      !MIME_TYPES_BY_EXTENSION[fileExt]?.includes(file.mimetype)
+    ) {
+      throw new BadRequestException(
+        'File MIME type does not match its extension',
       );
     }
 
@@ -237,12 +264,20 @@ export class ApplicationsService {
     return this.applicationDocumentRepository.save(doc);
   }
 
-  async getChecklist(id: string): Promise<Record<string, unknown>> {
+  async getChecklist(
+    id: string,
+    applicantId?: string,
+  ): Promise<Record<string, unknown>> {
     const app = await this.applicationRepository.findOne({
       where: { id },
       relations: { permitType: true },
     });
     if (!app) throw new NotFoundException('Application not found');
+    if (applicantId && app.applicantId !== applicantId) {
+      throw new ForbiddenException(
+        'You can only view your own application checklist',
+      );
+    }
 
     const requirements = await this.permitRequirementRepository.find({
       where: { permit_type_id: app.permitTypeId },
@@ -274,7 +309,17 @@ export class ApplicationsService {
     };
   }
 
-  async submitApplication(id: string, userId: string): Promise<Application> {
+  async submitApplication(
+    id: string,
+    userId: string,
+    user?: User,
+  ): Promise<Application> {
+    if (user && !user.emailVerifiedAt) {
+      throw new ForbiddenException(
+        'Email verification required to submit an application',
+      );
+    }
+
     const app = await this.applicationRepository.findOne({
       where: { id },
       relations: { permitType: true },

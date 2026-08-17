@@ -88,8 +88,9 @@ export class ApplicationsController {
   @Roles('applicant')
   async getChecklist(
     @Param('id') id: string,
+    @Req() req: RequestWithUser,
   ): Promise<Record<string, unknown>> {
-    return this.applicationsService.getChecklist(id);
+    return this.applicationsService.getChecklist(id, req.user.id);
   }
 
   @Post(':id/submit')
@@ -98,6 +99,10 @@ export class ApplicationsController {
     @Param('id') id: string,
     @Req() req: RequestWithUser,
   ) {
-    return this.applicationsService.submitApplication(id, req.user.id);
+    return this.applicationsService.submitApplication(
+      id,
+      req.user.id,
+      req.user,
+    );
   }
 }
