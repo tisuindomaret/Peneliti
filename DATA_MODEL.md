@@ -17,19 +17,22 @@
 
 ## 1. `users`
 
-| Column            | Type                          | Notes                                 |
-| ----------------- | ----------------------------- | ------------------------------------- |
-| id                | UUID PK                       |                                       |
-| name              | text                          |                                       |
-| email             | text UNIQUE                   |                                       |
-| phone             | text                          |                                       |
-| password_hash     | text                          | bcrypt/argon2                         |
-| applicant_type    | enum(individual, institution) | nullable for internal staff           |
-| email_verified_at | timestamp                     | null until verified                   |
-| status            | enum(active, deactivated)     | soft-delete via this + deactivated_at |
-| deactivated_at    | timestamp                     | nullable                              |
-| created_at        | timestamp                     |                                       |
-| updated_at        | timestamp                     |                                       |
+| Column                    | Type                          | Notes                                 |
+| ------------------------- | ----------------------------- | ------------------------------------- |
+| id                        | UUID PK                       |                                       |
+| name                      | text                          |                                       |
+| email                     | text UNIQUE                   |                                       |
+| phone                     | text                          |                                       |
+| password_hash             | text                          | bcrypt/argon2                         |
+| applicant_type            | enum(individual, institution) | nullable for internal staff           |
+| email_verified_at         | timestamp                     | null until verified                   |
+| status                    | enum(active, deactivated)     | soft-delete via this + deactivated_at |
+| deactivated_at            | timestamp                     | nullable                              |
+| verification_token        | text                          | nullable; never returned or logged    |
+| reset_password_token      | text                          | nullable; never returned or logged    |
+| reset_password_expires_at | timestamp                     | nullable                              |
+| created_at                | timestamp                     |                                       |
+| updated_at                | timestamp                     |                                       |
 
 ## 2. `roles` and `permissions` (RBAC)
 
@@ -214,17 +217,17 @@
 
 ## 14. `audit_logs`
 
-| Column       | Type       | Notes                                |
-| ------------ | ---------- | ------------------------------------ |
-| id           | UUID PK    |                                      |
-| actor_id     | FK → users | nullable for system-triggered events |
-| action       | text       | e.g. `application.status_changed`    |
-| object_type  | text       | e.g. `application`, `permit`         |
-| object_id    | UUID       |                                      |
-| before_state | jsonb      | nullable                             |
-| after_state  | jsonb      | nullable                             |
-| ip_address   | text       | nullable                             |
-| created_at   | timestamp  |                                      |
+| Column       | Type       | Notes                                           |
+| ------------ | ---------- | ----------------------------------------------- |
+| id           | UUID PK    |                                                 |
+| actor_id     | FK → users | nullable for system-triggered events            |
+| action       | text       | e.g. `application.status_changed`, `auth.login` |
+| object_type  | text       | e.g. `user`, `application`, `permit`            |
+| object_id    | UUID       | nullable for non-resource actions               |
+| before_state | jsonb      | nullable                                        |
+| after_state  | jsonb      | nullable                                        |
+| ip_address   | text       | nullable                                        |
+| created_at   | timestamp  |                                                 |
 
 **Rule:** `audit_logs` has no UPDATE/DELETE endpoint anywhere in the API. Insert-only. (No `updated_at` needed)
 

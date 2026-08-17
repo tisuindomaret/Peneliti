@@ -28,6 +28,12 @@ export class RolesService implements OnModuleInit {
       'official',
       'output_reviewer',
     ];
+    const defaultPermissions = [
+      'account.read.self',
+      'account.deactivate',
+      'auth.password.change',
+      'application.submit',
+    ];
 
     for (const roleName of defaultRoles) {
       const existingRole = await this.findByName(roleName);
@@ -35,6 +41,19 @@ export class RolesService implements OnModuleInit {
         const newRole = this.roleRepository.create({ name: roleName });
         await this.roleRepository.save(newRole);
         this.logger.log(`Seeded role: ${roleName}`);
+      }
+    }
+
+    for (const permissionCode of defaultPermissions) {
+      const existingPermission = await this.permissionRepository.findOne({
+        where: { code: permissionCode },
+      });
+      if (!existingPermission) {
+        const newPermission = this.permissionRepository.create({
+          code: permissionCode,
+        });
+        await this.permissionRepository.save(newPermission);
+        this.logger.log(`Seeded permission: ${permissionCode}`);
       }
     }
   }

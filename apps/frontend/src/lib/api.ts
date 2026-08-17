@@ -44,7 +44,11 @@ export const authApi = {
 
   changePassword: (data: Record<string, unknown>) =>
     fetchWithAuth('/auth/change-password', { method: 'POST', body: JSON.stringify(data) }),
-  logout: () => {
-    localStorage.removeItem('token');
+  logout: async () => {
+    try {
+      await fetchWithAuth('/auth/logout', { method: 'POST' });
+    } finally {
+      localStorage.removeItem('token');
+    }
   },
 };

@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserStatus } from './entities/user.entity';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private readonly auditService: AuditService,
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
@@ -40,9 +42,27 @@ export class UsersService {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException('User not found');
 
+    const beforeState = {
+      status: user.status,
+      deactivatedAt: user.deactivatedAt?.toISOString() ?? null,
+    };
+
     user.status = UserStatus.DEACTIVATED;
     user.deactivatedAt = new Date();
-    return this.userRepository.save(user);
+    const updatedUser = await this.userRepository.save(user);
+
+    await this.auditService.record({
+      action: 'user.deactivated',
+      objectType: 'user',
+      objectId: updatedUser.id,
+      beforeState,
+      afterState: {
+        status: updatedUser.status,
+        deactivatedAt: updatedUser.deactivatedAt?.toISOString() ?? null,
+      },
+    });
+
+    return updatedUser;
   }
 
   async findByVerificationToken(token: string): Promise<User | null> {

@@ -21,6 +21,7 @@ Conventions:
 | POST   | `/auth/verify-email`     | Public        | Confirm email via token/OTP                                   |
 | POST   | `/auth/login`            | Public        | Login, returns token/session                                  |
 | POST   | `/auth/logout`           | Authenticated | Invalidate session/token                                      |
+| POST   | `/auth/change-password`  | Authenticated | Change password using the current password                    |
 | POST   | `/auth/forgot-password`  | Public        | Send reset link                                               |
 | POST   | `/auth/reset-password`   | Public        | Reset with token                                              |
 | PATCH  | `/users/{id}/deactivate` | Admin         | Soft-deactivate account                                       |

@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
 import { MailerService } from '../mailer/mailer.service';
+import { AuditService } from '../audit/audit.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -24,6 +25,7 @@ export class AuthService {
     private usersService: UsersService,
     private rolesService: RolesService,
     private mailerService: MailerService,
+    private auditService: AuditService,
     private jwtService: JwtService,
   ) {}
 
@@ -54,6 +56,17 @@ export class AuthService {
     }
 
     await this.mailerService.sendVerificationEmail(email, verificationToken);
+    await this.auditService.record({
+      actorId: newUser.id,
+      action: 'auth.registered',
+      objectType: 'user',
+      objectId: newUser.id,
+      afterState: {
+        email: newUser.email,
+        applicantType: newUser.applicantType ?? null,
+        status: newUser.status,
+      },
+    });
 
     return {
       message:
@@ -69,9 +82,21 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired verification token');
     }
 
+    const verifiedAt = new Date();
+
     await this.usersService.update(user.id, {
-      emailVerifiedAt: new Date(),
+      emailVerifiedAt: verifiedAt,
       verificationToken: '', // Clear token
+    });
+    await this.auditService.record({
+      actorId: user.id,
+      action: 'auth.email_verified',
+      objectType: 'user',
+      objectId: user.id,
+      beforeState: {
+        emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? null,
+      },
+      afterState: { emailVerifiedAt: verifiedAt.toISOString() },
     });
 
     return { message: 'Email successfully verified. You can now login.' };
@@ -100,6 +125,13 @@ export class AuthService {
 
     const roles = user.userRoles?.map((ur) => ur.role.name) || [];
     const payload = { email: user.email, sub: user.id, roles };
+    await this.auditService.record({
+      actorId: user.id,
+      action: 'auth.login',
+      objectType: 'user',
+      objectId: user.id,
+      afterState: { roles },
+    });
 
     return {
       accessToken: this.jwtService.sign(payload),
@@ -158,6 +190,12 @@ export class AuthService {
       resetPasswordToken: '',
       resetPasswordExpiresAt: undefined,
     });
+    await this.auditService.record({
+      actorId: user.id,
+      action: 'auth.password_reset',
+      objectType: 'user',
+      objectId: user.id,
+    });
 
     return {
       message: 'Password has been successfully reset. You can now login.',
@@ -188,6 +226,12 @@ export class AuthService {
 
     await this.usersService.update(user.id, {
       passwordHash,
+    });
+    await this.auditService.record({
+      actorId: user.id,
+      action: 'auth.password_changed',
+      objectType: 'user',
+      objectId: user.id,
     });
 
     return { message: 'Password successfully changed' };
