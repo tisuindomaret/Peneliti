@@ -76,6 +76,20 @@ describe('ProfilesService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
+    it('only looks up an institution owned by the current user', async () => {
+      mockUserRepo.findOne.mockResolvedValueOnce({ id: 'user-id' });
+      mockProfileRepo.findOne.mockResolvedValueOnce(null);
+      mockInstitutionRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateProfile('user-id', { institutionId: 'institution-id' }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockInstitutionRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'institution-id', ownerUser: { id: 'user-id' } },
+      });
+    });
+
     it('should handle profile creation if none exists', async () => {
       mockUserRepo.findOne.mockResolvedValueOnce({ id: 'user-id' });
       mockProfileRepo.findOne.mockResolvedValueOnce(null);

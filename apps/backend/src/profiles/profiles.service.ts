@@ -87,9 +87,13 @@ export class ProfilesService {
         profile.institution = null as unknown as Institution;
       } else {
         const institution = await this.institutionRepository.findOne({
-          where: { id: dto.institutionId },
+          where: { id: dto.institutionId, ownerUser: { id: userId } },
         });
-        if (!institution) throw new NotFoundException('Institution not found');
+        if (!institution) {
+          throw new NotFoundException(
+            'Institution not found or not owned by user',
+          );
+        }
         profile.institution = institution;
       }
     }
