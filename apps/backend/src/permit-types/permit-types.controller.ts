@@ -40,6 +40,7 @@ export class PermitTypesController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string) {
     const item = await this.permitTypesService.findOne(id);
     return { data: item };
