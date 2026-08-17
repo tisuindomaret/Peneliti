@@ -1,10 +1,38 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { Module, ValidationPipe } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_PIPE } from '@nestjs/core';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { UsersModule } from './users/users.module';
+import { RolesModule } from './roles/roles.module';
+import { MailerModule } from './mailer/mailer.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url:
+        process.env.DATABASE_URL ||
+        'postgresql://rpl_user:rpl_password@localhost:5432/rpl_db?schema=public',
+      autoLoadEntities: true,
+      synchronize: true, // Only for dev
+    }),
+    AuthModule,
+    UsersModule,
+    RolesModule,
+    MailerModule,
+  ],
+  providers: [
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
