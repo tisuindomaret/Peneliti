@@ -76,3 +76,28 @@ export const filesApi = {
     });
   },
 };
+
+// Application API
+export async function getApplications(token: string) {
+  return fetchWithAuth('/api/v1/applications', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function createDraft(token: string, data: Record<string, unknown>) {
+  return fetchWithAuth('/api/v1/applications', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function submitApplication(id: string, token: string) {
+  return fetchWithAuth(`/api/v1/applications/${id}/submit`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}

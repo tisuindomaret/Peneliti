@@ -11,6 +11,7 @@ import { AuditModule } from './audit/audit.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { InstitutionsModule } from './institutions/institutions.module';
 import { PermitTypesModule } from './permit-types/permit-types.module';
+import { ApplicationsModule } from './applications/applications.module';
 import { FilesModule } from './files/files.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { FilesModule } from './files/files.module';
     ProfilesModule,
     InstitutionsModule,
     FilesModule,
+    ApplicationsModule,
   ],
   providers: [
     {
