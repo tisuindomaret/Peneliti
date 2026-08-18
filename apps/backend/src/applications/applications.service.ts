@@ -66,8 +66,7 @@ export class ApplicationsService {
   async findAll(
     userId: string,
     userRoles: string[],
-
-    query: Record<string, any> = {},
+    query: Record<string, unknown> = {},
   ): Promise<Application[]> {
     const isInternal =
       userRoles.includes('admin') ||
@@ -85,29 +84,40 @@ export class ApplicationsService {
       qb.andWhere('app.applicantId = :userId', { userId });
     }
 
-    if (query.status) {
-      qb.andWhere('app.status = :status', { status: query.status as string });
+    const status = typeof query.status === 'string' ? query.status : undefined;
+    const permitTypeId =
+      typeof query.permit_type === 'string' ? query.permit_type : undefined;
+    const dateFrom =
+      typeof query.date_from === 'string' ? query.date_from : undefined;
+    const dateTo =
+      typeof query.date_to === 'string' ? query.date_to : undefined;
+    const assignment =
+      typeof query.assignment === 'string' ? query.assignment : undefined;
+    const search = typeof query.search === 'string' ? query.search : undefined;
+
+    if (status) {
+      qb.andWhere('app.status = :status', { status });
     }
 
-    if (query.permit_type) {
+    if (permitTypeId) {
       qb.andWhere('app.permitTypeId = :permitType', {
-        permitType: query.permit_type as string,
+        permitType: permitTypeId,
       });
     }
 
-    if (query.date_from) {
+    if (dateFrom) {
       qb.andWhere('app.submittedAt >= :dateFrom', {
-        dateFrom: new Date(query.date_from),
+        dateFrom: new Date(dateFrom),
       });
     }
 
-    if (query.date_to) {
+    if (dateTo) {
       qb.andWhere('app.submittedAt <= :dateTo', {
-        dateTo: new Date(query.date_to),
+        dateTo: new Date(dateTo),
       });
     }
 
-    if (query.assignment === 'me') {
+    if (assignment === 'me') {
       if (userRoles.includes('verifier')) {
         qb.andWhere('app.assignedVerifierId = :userId', { userId });
       } else if (userRoles.includes('official')) {
@@ -115,10 +125,10 @@ export class ApplicationsService {
       }
     }
 
-    if (query.search) {
+    if (search) {
       qb.andWhere(
         '(app.applicationNumber ILIKE :search OR app.title ILIKE :search)',
-        { search: `%${query.search}%` },
+        { search: `%${search}%` },
       );
     }
 
