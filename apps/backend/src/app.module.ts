@@ -1,3 +1,4 @@
+import { SharedModule } from './shared/shared.module';
 import { Module, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
@@ -16,6 +17,7 @@ import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
+    SharedModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',

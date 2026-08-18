@@ -78,26 +78,94 @@ export const filesApi = {
 };
 
 // Application API
-export async function getApplications(token: string) {
-  return fetchWithAuth('/api/v1/applications', {
-    headers: { Authorization: `Bearer ${token}` }
+export async function getApplications(token: string, searchParams?: URLSearchParams) {
+  const qs = searchParams ? `?${searchParams.toString()}` : '';
+  return fetchWithAuth(`/applications${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getApplication(id: string, token: string) {
+  return fetchWithAuth(`/applications/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
 
 export async function createDraft(token: string, data: Record<string, unknown>) {
-  return fetchWithAuth('/api/v1/applications', {
+  return fetchWithAuth('/applications', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
 export async function submitApplication(id: string, token: string) {
-  return fetchWithAuth(`/api/v1/applications/${id}/submit`, {
+  return fetchWithAuth(`/applications/${id}/submit`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function reviewApplication(id: string, data: Record<string, unknown>, token: string) {
+  return fetchWithAuth(`/applications/${id}/reviews`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function requestRevision(id: string, data: Record<string, unknown>, token: string) {
+  return fetchWithAuth(`/applications/${id}/request-revision`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function forwardApplication(id: string, data: Record<string, unknown>, token: string) {
+  return fetchWithAuth(`/applications/${id}/forward`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function approveApplication(id: string, data: Record<string, unknown>, token: string) {
+  return fetchWithAuth(`/applications/${id}/approve`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function rejectApplication(id: string, data: Record<string, unknown>, token: string) {
+  return fetchWithAuth(`/applications/${id}/reject`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getApplicationHistory(id: string, token: string) {
+  return fetchWithAuth(`/applications/${id}/history`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 }

@@ -114,6 +114,12 @@ export class Application {
   @Column({ type: 'timestamp', nullable: true, name: 'decided_at' })
   decidedAt: Date | null;
 
+  @Column({ type: 'text', nullable: true, name: 'rejection_reason' })
+  rejectionReason: string | null;
+
+  @Column({ type: 'text', nullable: true, name: 'approval_conditions' })
+  approvalConditions: string | null;
+
   @OneToMany(() => ApplicationDocument, (doc) => doc.application)
   documents: ApplicationDocument[];
 
