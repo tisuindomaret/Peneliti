@@ -36,7 +36,7 @@ export class ApplicationsController {
     const roles = req.user.userRoles?.map((ur) => ur.role.name) || [
       'applicant',
     ];
-    return this.applicationsService.findAll(req.user.id, roles);
+    return this.applicationsService.findAll(req.user.id, roles, req.query);
   }
 
   @Post()
