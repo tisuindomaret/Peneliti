@@ -5,6 +5,7 @@ import { Application, ApplicationStatus } from './entities/application.entity';
 import { ApplicationDocument } from './entities/application-document.entity';
 import { PermitRequirement } from '../permit-types/entities/permit-requirement.entity';
 import { StatusHistory } from '../shared/entities/status-history.entity';
+import { StatusTransitionService } from '../shared/services/status-transition.service';
 import { AuditService } from '../audit/audit.service';
 import { FilesService } from '../files/files.service';
 import { ForbiddenException, BadRequestException } from '@nestjs/common';
@@ -35,6 +36,7 @@ describe('ApplicationsService - Full Flow', () => {
   const mockStatusHistoryRepo = {
     create: jest.fn(),
     save: jest.fn(),
+    find: jest.fn(),
   };
 
   const mockAuditService = {
@@ -43,6 +45,10 @@ describe('ApplicationsService - Full Flow', () => {
 
   const mockFilesService = {
     uploadFile: jest.fn(),
+  };
+
+  const mockStatusTransitionService = {
+    transitionApplication: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -64,6 +70,10 @@ describe('ApplicationsService - Full Flow', () => {
         },
         { provide: AuditService, useValue: mockAuditService },
         { provide: FilesService, useValue: mockFilesService },
+        {
+          provide: StatusTransitionService,
+          useValue: mockStatusTransitionService,
+        },
       ],
     }).compile();
 
@@ -168,6 +178,76 @@ describe('ApplicationsService - Full Flow', () => {
       expect(result.applicationNumber).toBe(
         `APP/${new Date().getFullYear()}/0043`,
       );
+    });
+  });
+
+  describe('Revision', () => {
+    it('should transition to NEEDS_REVISION via requestRevision', async () => {
+      const app = { id: 'app1', status: ApplicationStatus.ADMIN_VERIFICATION };
+      mockAppRepo.findOne.mockResolvedValue(app);
+
+      mockStatusTransitionService.transitionApplication.mockResolvedValue({
+        ...app,
+        status: ApplicationStatus.NEEDS_REVISION,
+      });
+
+      const dto = {
+        reason: 'Incomplete',
+        actionList: [{ field: 'objective', instruction: 'fix' }],
+      };
+
+      const result = await service.requestRevision('app1', dto, 'verifier1');
+
+      expect(
+        mockStatusTransitionService.transitionApplication,
+      ).toHaveBeenCalledWith(
+        app,
+        ApplicationStatus.NEEDS_REVISION,
+        'verifier1',
+        expect.stringContaining('Incomplete'),
+      );
+      expect(result.status).toBe(ApplicationStatus.NEEDS_REVISION);
+    });
+  });
+
+  describe('Rejection & History', () => {
+    it('should throw BadRequestException if rejection reason is empty', async () => {
+      mockAppRepo.findOne.mockResolvedValue({
+        id: 'app1',
+        applicantId: 'user1',
+        status: ApplicationStatus.AWAITING_APPROVAL,
+      });
+
+      await expect(
+        service.rejectApplication('app1', { reason: '' }, 'official1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('getApplicationHistory should return correct data for authorized user', async () => {
+      mockAppRepo.findOne.mockResolvedValue({
+        id: 'app1',
+        applicantId: 'user1',
+      });
+      mockStatusHistoryRepo.find.mockResolvedValue([
+        { id: 'hist1', fromStatus: 'draft', toStatus: 'submitted' },
+      ]);
+
+      const result = await service.getApplicationHistory('app1', 'user1', [
+        'applicant',
+      ]);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('hist1');
+    });
+
+    it('getApplicationHistory should block unauthorized user', async () => {
+      mockAppRepo.findOne.mockResolvedValue({
+        id: 'app1',
+        applicantId: 'user2',
+      });
+
+      await expect(
+        service.getApplicationHistory('app1', 'user1', ['applicant']),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 

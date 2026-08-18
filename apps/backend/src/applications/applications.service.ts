@@ -22,6 +22,14 @@ import {
 import { PermitRequirement } from '../permit-types/entities/permit-requirement.entity';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { User } from '../users/entities/user.entity';
+import { StatusTransitionService } from '../shared/services/status-transition.service';
+import { ReviewApplicationDto } from './dto/review-application.dto';
+import {
+  RequestRevisionDto,
+  ForwardApplicationDto,
+  ApproveApplicationDto,
+  RejectApplicationDto,
+} from './dto/review-action.dto';
 import { extname } from 'path';
 
 const MIME_TYPES_BY_EXTENSION: Record<string, string[]> = {
@@ -52,23 +60,79 @@ export class ApplicationsService {
     private readonly applicationRepository: Repository<Application>,
     private readonly auditService: AuditService,
     private readonly filesService: FilesService,
+    private readonly statusTransitionService: StatusTransitionService,
   ) {}
 
-  async findAll(userId: string, userRoles: string[]): Promise<Application[]> {
-    if (
+  async findAll(
+    userId: string,
+    userRoles: string[],
+    query: Record<string, unknown> = {},
+  ): Promise<Application[]> {
+    const isInternal =
       userRoles.includes('admin') ||
       userRoles.includes('official') ||
-      userRoles.includes('verifier')
-    ) {
-      return this.applicationRepository.find({
-        order: { updatedAt: 'DESC' },
+      userRoles.includes('verifier');
+
+    const qb = this.applicationRepository
+      .createQueryBuilder('app')
+      .leftJoinAndSelect('app.permitType', 'permitType')
+      .leftJoinAndSelect('app.applicant', 'applicant')
+      .leftJoinAndSelect('app.institution', 'institution')
+      .orderBy('app.updatedAt', 'DESC');
+
+    if (!isInternal) {
+      qb.andWhere('app.applicantId = :userId', { userId });
+    }
+
+    const status = typeof query.status === 'string' ? query.status : undefined;
+    const permitTypeId =
+      typeof query.permit_type === 'string' ? query.permit_type : undefined;
+    const dateFrom =
+      typeof query.date_from === 'string' ? query.date_from : undefined;
+    const dateTo =
+      typeof query.date_to === 'string' ? query.date_to : undefined;
+    const assignment =
+      typeof query.assignment === 'string' ? query.assignment : undefined;
+    const search = typeof query.search === 'string' ? query.search : undefined;
+
+    if (status) {
+      qb.andWhere('app.status = :status', { status });
+    }
+
+    if (permitTypeId) {
+      qb.andWhere('app.permitTypeId = :permitType', {
+        permitType: permitTypeId,
       });
     }
 
-    return this.applicationRepository.find({
-      where: { applicantId: userId },
-      order: { updatedAt: 'DESC' },
-    });
+    if (dateFrom) {
+      qb.andWhere('app.submittedAt >= :dateFrom', {
+        dateFrom: new Date(dateFrom),
+      });
+    }
+
+    if (dateTo) {
+      qb.andWhere('app.submittedAt <= :dateTo', {
+        dateTo: new Date(dateTo),
+      });
+    }
+
+    if (assignment === 'me') {
+      if (userRoles.includes('verifier')) {
+        qb.andWhere('app.assignedVerifierId = :userId', { userId });
+      } else if (userRoles.includes('official')) {
+        qb.andWhere('app.assignedOfficialId = :userId', { userId });
+      }
+    }
+
+    if (search) {
+      qb.andWhere(
+        '(app.applicationNumber ILIKE :search OR app.title ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    return qb.getMany();
   }
 
   async findOne(
@@ -307,6 +371,172 @@ export class ApplicationsService {
       isComplete,
       checklist,
     };
+  }
+
+  async reviewApplication(
+    id: string,
+    dto: ReviewApplicationDto,
+    userId: string,
+  ): Promise<Application> {
+    const app = await this.applicationRepository.findOne({
+      where: { id },
+      relations: { documents: true },
+    });
+    if (!app) throw new NotFoundException('Application not found');
+
+    if (
+      app.status !== ApplicationStatus.SUBMITTED &&
+      app.status !== ApplicationStatus.ADMIN_VERIFICATION &&
+      app.status !== ApplicationStatus.SUBSTANTIVE_VERIFICATION
+    ) {
+      throw new BadRequestException('Application is not in a reviewable state');
+    }
+
+    if (dto.documentReviews) {
+      for (const dr of dto.documentReviews) {
+        const doc = await this.applicationDocumentRepository.findOne({
+          where: { id: dr.documentId, applicationId: id },
+        });
+        if (doc) {
+          doc.reviewStatus = dr.status;
+          await this.applicationDocumentRepository.save(doc);
+        }
+      }
+    }
+
+    if (dto.note) {
+      const history = this.statusHistoryRepository.create({
+        entityType: EntityType.APPLICATION,
+        entityId: id,
+        fromStatus: app.status,
+        toStatus: app.status,
+        actorId: userId,
+        note: dto.note,
+      });
+      await this.statusHistoryRepository.save(history);
+    }
+
+    return app;
+  }
+
+  async requestRevision(
+    id: string,
+    dto: RequestRevisionDto,
+    userId: string,
+  ): Promise<Application> {
+    const app = await this.applicationRepository.findOne({ where: { id } });
+    if (!app) throw new NotFoundException('Application not found');
+
+    const actionListStr = JSON.stringify(dto.actionList);
+    const note = `${dto.reason}\n\nActions:\n${actionListStr}`;
+
+    return this.statusTransitionService.transitionApplication(
+      app,
+      ApplicationStatus.NEEDS_REVISION,
+      userId,
+      note,
+    );
+  }
+
+  async forwardApplication(
+    id: string,
+    dto: ForwardApplicationDto,
+    userId: string,
+  ): Promise<Application> {
+    const app = await this.applicationRepository.findOne({ where: { id } });
+    if (!app) throw new NotFoundException('Application not found');
+
+    let nextStatus: ApplicationStatus;
+    if (app.status === ApplicationStatus.SUBMITTED) {
+      nextStatus = ApplicationStatus.ADMIN_VERIFICATION;
+    } else if (app.status === ApplicationStatus.ADMIN_VERIFICATION) {
+      nextStatus = ApplicationStatus.SUBSTANTIVE_VERIFICATION;
+    } else if (app.status === ApplicationStatus.SUBSTANTIVE_VERIFICATION) {
+      nextStatus = ApplicationStatus.AWAITING_APPROVAL;
+    } else {
+      throw new BadRequestException(
+        'Application cannot be forwarded from its current status',
+      );
+    }
+
+    return this.statusTransitionService.transitionApplication(
+      app,
+      nextStatus,
+      userId,
+      dto.note,
+    );
+  }
+
+  async approveApplication(
+    id: string,
+    dto: ApproveApplicationDto,
+    userId: string,
+  ): Promise<Application> {
+    const app = await this.applicationRepository.findOne({ where: { id } });
+    if (!app) throw new NotFoundException('Application not found');
+
+    if (dto.conditions) {
+      app.approvalConditions = dto.conditions;
+      await this.applicationRepository.save(app);
+    }
+
+    return this.statusTransitionService.transitionApplication(
+      app,
+      ApplicationStatus.APPROVED,
+      userId,
+      dto.conditions
+        ? `Approved with conditions: ${dto.conditions}`
+        : 'Approved',
+    );
+  }
+
+  async rejectApplication(
+    id: string,
+    dto: RejectApplicationDto,
+    userId: string,
+  ): Promise<Application> {
+    const app = await this.applicationRepository.findOne({ where: { id } });
+    if (!app) throw new NotFoundException('Application not found');
+
+    if (!dto.reason) {
+      throw new BadRequestException('Rejection reason is mandatory');
+    }
+
+    app.rejectionReason = dto.reason;
+    await this.applicationRepository.save(app);
+
+    return this.statusTransitionService.transitionApplication(
+      app,
+      ApplicationStatus.REJECTED,
+      userId,
+      `Rejected. Reason: ${dto.reason}`,
+    );
+  }
+
+  async getApplicationHistory(
+    id: string,
+    userId: string,
+    userRoles: string[],
+  ): Promise<StatusHistory[]> {
+    const app = await this.applicationRepository.findOne({ where: { id } });
+    if (!app) throw new NotFoundException('Application not found');
+
+    const isInternal =
+      userRoles.includes('admin') ||
+      userRoles.includes('official') ||
+      userRoles.includes('verifier');
+
+    if (!isInternal && app.applicantId !== userId) {
+      throw new ForbiddenException(
+        'You can only view history for your own applications',
+      );
+    }
+
+    return this.statusHistoryRepository.find({
+      where: { entityType: EntityType.APPLICATION, entityId: id },
+      order: { createdAt: 'DESC' },
+      relations: { actor: true },
+    });
   }
 
   async submitApplication(

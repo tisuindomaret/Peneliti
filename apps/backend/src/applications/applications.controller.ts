@@ -21,6 +21,13 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Request } from 'express';
 import { User } from '../users/entities/user.entity';
+import { ReviewApplicationDto } from './dto/review-application.dto';
+import {
+  RequestRevisionDto,
+  ForwardApplicationDto,
+  ApproveApplicationDto,
+  RejectApplicationDto,
+} from './dto/review-action.dto';
 
 interface RequestWithUser extends Request {
   user: User;
@@ -36,7 +43,7 @@ export class ApplicationsController {
     const roles = req.user.userRoles?.map((ur) => ur.role.name) || [
       'applicant',
     ];
-    return this.applicationsService.findAll(req.user.id, roles);
+    return this.applicationsService.findAll(req.user.id, roles, req.query);
   }
 
   @Post()
@@ -103,6 +110,71 @@ export class ApplicationsController {
       id,
       req.user.id,
       req.user,
+    );
+  }
+
+  @Post(':id/reviews')
+  @Roles('verifier')
+  async reviewApplication(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body() dto: ReviewApplicationDto,
+  ) {
+    return this.applicationsService.reviewApplication(id, dto, req.user.id);
+  }
+
+  @Post(':id/request-revision')
+  @Roles('verifier')
+  async requestRevision(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body() dto: RequestRevisionDto,
+  ) {
+    return this.applicationsService.requestRevision(id, dto, req.user.id);
+  }
+
+  @Post(':id/forward')
+  @Roles('verifier')
+  async forwardApplication(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body() dto: ForwardApplicationDto,
+  ) {
+    return this.applicationsService.forwardApplication(id, dto, req.user.id);
+  }
+
+  @Post(':id/approve')
+  @Roles('official')
+  async approveApplication(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body() dto: ApproveApplicationDto,
+  ) {
+    return this.applicationsService.approveApplication(id, dto, req.user.id);
+  }
+
+  @Post(':id/reject')
+  @Roles('official')
+  async rejectApplication(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body() dto: RejectApplicationDto,
+  ) {
+    return this.applicationsService.rejectApplication(id, dto, req.user.id);
+  }
+
+  @Get(':id/history')
+  async getApplicationHistory(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+  ) {
+    const roles = req.user.userRoles?.map((ur) => ur.role.name) || [
+      'applicant',
+    ];
+    return this.applicationsService.getApplicationHistory(
+      id,
+      req.user.id,
+      roles,
     );
   }
 }
