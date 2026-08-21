@@ -64,6 +64,29 @@ export class NotificationsService {
 
     const saved = await this.notificationRepo.save(notification);
 
+    // The notification center must receive an in-app record for every domain
+    // event.  Keep this deliberately free of interpolated variables: events
+    // such as account creation can carry a verification URL/token intended
+    // only for the email channel.
+    if (payload.channel === NotificationChannel.EMAIL) {
+      const inAppNotification = this.notificationRepo.create({
+        recipientId: payload.recipientId,
+        channel: NotificationChannel.IN_APP,
+        eventType: payload.eventType,
+        content: `New notification: ${payload.eventType}`,
+        deliveryStatus: DeliveryStatus.PENDING,
+      });
+      const savedInAppNotification =
+        await this.notificationRepo.save(inAppNotification);
+      await this.notificationsQueue.add('send-notification', {
+        notificationId: savedInAppNotification.id,
+        recipientId: payload.recipientId,
+        channel: NotificationChannel.IN_APP,
+        subject: '',
+        content: savedInAppNotification.content,
+      });
+    }
+
     await this.notificationsQueue.add(
       'send-notification',
       {
