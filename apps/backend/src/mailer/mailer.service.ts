@@ -59,4 +59,23 @@ export class MailerService {
       throw error;
     }
   }
+
+  async sendGenericEmail(
+    email: string,
+    subject: string,
+    htmlContent: string,
+  ): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: '"RPL Service" <noreply@example.com>',
+        to: email,
+        subject,
+        html: htmlContent,
+      });
+      this.logger.log(`Email sent to ${email} with subject: ${subject}`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${email}`, error);
+      throw error;
+    }
+  }
 }

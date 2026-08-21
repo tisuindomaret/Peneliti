@@ -11,6 +11,8 @@ import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
 import { MailerService } from '../mailer/mailer.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationChannel } from '../notifications/entities/notification.entity';
 import { AuditService } from '../audit/audit.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -27,6 +29,7 @@ export class AuthService {
     private mailerService: MailerService,
     private auditService: AuditService,
     private jwtService: JwtService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<any> {
@@ -55,7 +58,14 @@ export class AuthService {
       await this.usersService.assignRole(newUser.id, applicantRole.id);
     }
 
-    await this.mailerService.sendVerificationEmail(email, verificationToken);
+    await this.notificationsService.queueNotification({
+      recipientId: newUser.id,
+      channel: NotificationChannel.EMAIL,
+      eventType: 'account_created',
+      variables: {
+        verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
+      }
+    });
     await this.auditService.record({
       actorId: newUser.id,
       action: 'auth.registered',

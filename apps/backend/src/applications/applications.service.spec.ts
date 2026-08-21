@@ -3,6 +3,7 @@ import { ApplicationsService } from './applications.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Application, ApplicationStatus } from './entities/application.entity';
 import { ApplicationDocument } from './entities/application-document.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PermitRequirement } from '../permit-types/entities/permit-requirement.entity';
 import { StatusHistory } from '../shared/entities/status-history.entity';
 import { StatusTransitionService } from '../shared/services/status-transition.service';
@@ -73,6 +74,10 @@ describe('ApplicationsService - Full Flow', () => {
         {
           provide: StatusTransitionService,
           useValue: mockStatusTransitionService,
+        },
+        {
+          provide: NotificationsService,
+          useValue: { queueNotification: jest.fn() },
         },
       ],
     }).compile();

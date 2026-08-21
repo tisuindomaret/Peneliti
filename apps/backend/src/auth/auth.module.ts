@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { RolesModule } from '../roles/roles.module';
 import { MailerModule } from '../mailer/mailer.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { AuditModule } from '../audit/audit.module';
 import { JwtStrategy } from './jwt.strategy';
 
@@ -15,6 +16,7 @@ import { JwtStrategy } from './jwt.strategy';
     UsersModule,
     RolesModule,
     MailerModule,
+    NotificationsModule,
     AuditModule,
     PassportModule,
     JwtModule.registerAsync({

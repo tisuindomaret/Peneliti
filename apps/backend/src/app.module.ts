@@ -14,6 +14,8 @@ import { InstitutionsModule } from './institutions/institutions.module';
 import { PermitTypesModule } from './permit-types/permit-types.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { FilesModule } from './files/files.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -27,6 +29,12 @@ import { FilesModule } from './files/files.module';
       autoLoadEntities: true,
       synchronize: true, // Only for dev
     }),
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      },
+    }),
     AuthModule,
     UsersModule,
     RolesModule,
@@ -37,6 +45,7 @@ import { FilesModule } from './files/files.module';
     InstitutionsModule,
     FilesModule,
     ApplicationsModule,
+    NotificationsModule,
   ],
   providers: [
     {

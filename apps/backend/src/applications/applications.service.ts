@@ -23,6 +23,8 @@ import { PermitRequirement } from '../permit-types/entities/permit-requirement.e
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { User } from '../users/entities/user.entity';
 import { StatusTransitionService } from '../shared/services/status-transition.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationChannel } from '../notifications/entities/notification.entity';
 import { ReviewApplicationDto } from './dto/review-application.dto';
 import {
   RequestRevisionDto,
@@ -61,6 +63,7 @@ export class ApplicationsService {
     private readonly auditService: AuditService,
     private readonly filesService: FilesService,
     private readonly statusTransitionService: StatusTransitionService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findAll(
@@ -430,12 +433,24 @@ export class ApplicationsService {
     const actionListStr = JSON.stringify(dto.actionList);
     const note = `${dto.reason}\n\nActions:\n${actionListStr}`;
 
-    return this.statusTransitionService.transitionApplication(
+    const revisedApp = await this.statusTransitionService.transitionApplication(
       app,
       ApplicationStatus.NEEDS_REVISION,
       userId,
       note,
     );
+
+    await this.notificationsService.queueNotification({
+      recipientId: revisedApp.applicantId,
+      channel: NotificationChannel.EMAIL,
+      eventType: 'revision_requested',
+      variables: {
+        applicationId: revisedApp.id,
+        note: note || '',
+      },
+    });
+
+    return revisedApp;
   }
 
   async forwardApplication(

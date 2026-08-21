@@ -219,11 +219,24 @@
 | channel         | enum(email, in_app)         |                                       |
 | event_type      | text                        | e.g. `application.revision_requested` |
 | content         | text                        |                                       |
-| delivery_status | enum(pending, sent, failed) |                                       |
+| delivery_status | enum(pending, sent, failed, read) |                                       |
+| read_at         | timestamp                   | nullable                              |
 | sent_at         | timestamp                   | nullable                              |
 | retry_count     | integer                     | default 0                             |
 | created_at      | timestamp                   |                                       |
 | updated_at      | timestamp                   |                                       |
+
+## 13.5. `notification_templates`
+
+| Column             | Type      | Notes |
+| ------------------ | --------- | ----- |
+| event_type         | text PK   | e.g. `application.revision_requested` |
+| subject            | text      | Email subject template |
+| body_template      | text      | Content template |
+| required_variables | jsonb     | nullable |
+| internal_recipients| jsonb     | nullable |
+| created_at         | timestamp | |
+| updated_at         | timestamp | |
 
 ## 14. `audit_logs`
 

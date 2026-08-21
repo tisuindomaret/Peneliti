@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+### Added
+- Phase 2.6 Notifications (FR-07, partial):
+  - Created `notifications` and `notification_templates` entities for managing event-driven notifications.
+  - Implemented BullMQ processor `NotificationsProcessor` for background email and in-app notification processing.
+  - Added triggers in `AuthService`, `ApplicationsService`, and `StatusTransitionService` for `account_created`, `application_received`, `revision_requested`, and `status_changed` events.
+  - Created client endpoints (`GET /api/v1/notifications`, `PATCH /api/v1/notifications/:id/read`) to list and mark notifications as read.
+  - Created admin endpoints (`GET /admin/notifications/failed`, `POST /admin/notifications/:id/retry`, `PUT /admin/notification-templates/:event`) to manage failed notifications and template settings.
+
 
 ### Added
 

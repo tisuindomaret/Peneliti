@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StatusHistory, EntityType } from '../entities/status-history.entity';
 import { AuditService } from '../../audit/audit.service';
+import { NotificationsService } from '../../notifications/notifications.service';
+import { NotificationChannel } from '../../notifications/entities/notification.entity';
 import {
   ApplicationStatus,
   Application,
@@ -14,6 +16,7 @@ export class StatusTransitionService {
     @InjectRepository(StatusHistory)
     private readonly statusHistoryRepo: Repository<StatusHistory>,
     private readonly auditService: AuditService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private readonly allowedTransitions: Record<
@@ -92,6 +95,17 @@ export class StatusTransitionService {
       objectId: application.id,
       beforeState,
       afterState: { ...application },
+    });
+
+    await this.notificationsService.queueNotification({
+      recipientId: application.applicantId,
+      channel: NotificationChannel.EMAIL,
+      eventType: 'status_changed',
+      variables: {
+        applicationId: application.id,
+        newStatus,
+        fromStatus,
+      },
     });
 
     return application;
