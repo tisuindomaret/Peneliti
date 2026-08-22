@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Phase 3.1: Configurable, unique sequential permit-number generation.
+- Phase 3.1: PDF generation from an admin-approved template.
+- Phase 3.1: Embedded QR code / verification URL in generated PDF.
+- Phase 3.1: Public verification endpoint and page showing public FR-06.4 fields.
+- Phase 3.1: Immutable issued permits with cancellation/revision workflow producing full history.
+### Added
 - Phase 2.6 Notifications (FR-07, partial):
   - Created `notifications` and `notification_templates` entities for managing event-driven notifications.
   - Implemented BullMQ processor `NotificationsProcessor` for background email and in-app notification processing.
@@ -53,6 +59,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added missing `/auth/logout` API route to match `API_SPEC.md`, audit-log persistence for critical account actions, and default permission seed placeholders for data-driven RBAC.
 
 ## [Unreleased]
+### Added
+- Phase 3.1: Configurable, unique sequential permit-number generation.
+- Phase 3.1: PDF generation from an admin-approved template.
+- Phase 3.1: Embedded QR code / verification URL in generated PDF.
+- Phase 3.1: Public verification endpoint and page showing public FR-06.4 fields.
+- Phase 3.1: Immutable issued permits with cancellation/revision workflow producing full history.
 
 ### Added
 - Implemented Phase 2.2 — Applicant Profile (FR-02) backend services (`profiles`, `institutions`, `files`) including schema, security validation, and role-based guards.

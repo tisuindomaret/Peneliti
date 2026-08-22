@@ -178,7 +178,7 @@
 | Column                  | Type                                         | Notes                                  |
 | ----------------------- | -------------------------------------------- | -------------------------------------- |
 | id                      | UUID PK                                      |                                        |
-| application_id          | FK → applications UNIQUE                     |                                        |
+| application_id          | FK → applications                            |                                        |
 | permit_number           | text UNIQUE                                  |                                        |
 | issued_at               | timestamp                                    |                                        |
 | valid_from              | date                                         |                                        |

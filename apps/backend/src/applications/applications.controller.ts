@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from './applications.service';
+import { PermitsService } from '../permits/permits.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { UploadDocumentDto } from './dto/upload-document.dto';
@@ -36,7 +37,10 @@ interface RequestWithUser extends Request {
 @Controller('api/v1/applications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ApplicationsController {
-  constructor(private readonly applicationsService: ApplicationsService) {}
+  constructor(
+    private readonly applicationsService: ApplicationsService,
+    private readonly permitsService: PermitsService,
+  ) {}
 
   @Get()
   async findAll(@Req() req: RequestWithUser) {
@@ -176,5 +180,11 @@ export class ApplicationsController {
       req.user.id,
       roles,
     );
+  }
+
+  @Post(':id/issue-permit')
+  @Roles('official', 'admin', 'system')
+  async issuePermit(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.permitsService.issuePermit(id, req.user.id);
   }
 }
